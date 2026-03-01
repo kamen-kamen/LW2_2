@@ -30,7 +30,7 @@ private slots:
     void on_btnLoad_clicked();
 
 private:
-    Ui::mainwindow *ui;
+    Ui::MainWindow *ui;
 
     std::vector<MenuItem> menuList;
     std::vector<Order> ordersList;

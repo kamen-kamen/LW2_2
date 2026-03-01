@@ -3,17 +3,19 @@
 
 #include <QFileDialog>
 #include <QTableWidgetItem>
+#include <QMessageBox>
 
 #include "../back/DataProcessing.h"
 #include "../back/FileManager.h"
+#include "../back/AddOrderDialog.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::mainwindow)
+    , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
-    // Хардкод меню (по заданию)
+    // Меню
     menuList = {
         MenuItem("Борщ", "Свежий, с чесноком", 350.0),
         MenuItem("Плов", "Узбекский с бараниной", 450.0),
@@ -21,16 +23,17 @@ MainWindow::MainWindow(QWidget *parent)
         MenuItem("Кофе", "Арабика", 150.0)
     };
 
-    ui->tableWidget->setColumnCount(3);
-    ui->tableWidget->setHorizontalHeaderLabels(
-        {"Блюдо", "Описание", "Цена"});
-
+    // Таблица заказов
     ui->tableOrders->setColumnCount(4);
     ui->tableOrders->setHorizontalHeaderLabels(
         {"Заказ №", "Стол", "Блюдо", "Кол-во"});
+    ui->tableOrders->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tableOrders->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    for (const auto& item : menuList)
-        ui->comboDish->addItem(item.getName());
+    // Таблица меню
+    ui->tableMenu->setColumnCount(3);
+    ui->tableMenu->setHorizontalHeaderLabels(
+        {"Блюдо", "Описание", "Цена"});
 
     updateMenuTable();
 }
@@ -41,21 +44,25 @@ MainWindow::~MainWindow()
 }
 
 //////////////////////////////////////////////////////////////
+// ОБНОВЛЕНИЕ МЕНЮ
 
 void MainWindow::updateMenuTable() {
-    ui->tableWidget->setRowCount(0);
+    ui->tableMenu->setRowCount(0);
 
     for (int i = 0; i < (int)menuList.size(); ++i) {
-        ui->tableWidget->insertRow(i);
+        ui->tableMenu->insertRow(i);
 
-        ui->tableWidget->setItem(i, 0,
+        ui->tableMenu->setItem(i, 0,
             new QTableWidgetItem(menuList[i].getName()));
-        ui->tableWidget->setItem(i, 1,
+        ui->tableMenu->setItem(i, 1,
             new QTableWidgetItem(menuList[i].getDescription()));
-        ui->tableWidget->setItem(i, 2,
+        ui->tableMenu->setItem(i, 2,
             new QTableWidgetItem(QString::number(menuList[i].getPrice())));
     }
 }
+
+//////////////////////////////////////////////////////////////
+// ОБНОВЛЕНИЕ ЗАКАЗОВ
 
 void MainWindow::updateOrdersTable() {
     ui->tableOrders->setRowCount(0);
@@ -75,63 +82,75 @@ void MainWindow::updateOrdersTable() {
 }
 
 //////////////////////////////////////////////////////////////
-// ДОБАВЛЕНИЕ
+// СОЗДАНИЕ
 
 void MainWindow::on_btnAddOrder_clicked() {
-    int id = ui->editOrderNum->text().toInt();
-    int table = ui->editTableNum->text().toInt();
-    QString dish = ui->comboDish->currentText();
-    int count = ui->editCount->text().toInt();
+    AddOrderDialog dlg(menuList, this);
 
-    if (count <= 0) return;
+    if (dlg.exec() == QDialog::Accepted) {
 
-    ordersList.push_back(Order(id, table, dish, count));
-    updateOrdersTable();
+        Order newOrder = dlg.getOrder();
 
-    ui->memoLog->append("Заказ добавлен.");
+        // Проверка уникальности ID
+        for (const auto& o : ordersList) {
+            if (o.getId() == newOrder.getId()) {
+                QMessageBox::warning(this,
+                    "Ошибка",
+                    "Заказ с таким номером уже существует!");
+                return;
+            }
+        }
+
+        ordersList.push_back(newOrder);
+        updateOrdersTable();
+        ui->memoLog->append("Заказ создан.");
+    }
 }
 
 //////////////////////////////////////////////////////////////
 // УДАЛЕНИЕ
 
 void MainWindow::on_btnDeleteOrder_clicked() {
-    int id = ui->editOrderNum->text().toInt();
+    int row = ui->tableOrders->currentRow();
 
-    ordersList.erase(
-        std::remove_if(ordersList.begin(), ordersList.end(),
-                       [id](const Order& o) {
-                           return o.getId() == id;
-                       }),
-        ordersList.end()
-    );
+    if (row < 0) return;
 
-    updateOrdersTable();
-    ui->memoLog->append("Заказ удалён.");
+    auto reply = QMessageBox::question(this,
+        "Удаление",
+        "Удалить выбранный заказ?");
+
+    if (reply == QMessageBox::Yes) {
+        ordersList.erase(ordersList.begin() + row);
+        updateOrdersTable();
+        ui->memoLog->append("Заказ удалён.");
+    }
 }
 
 //////////////////////////////////////////////////////////////
 // РЕДАКТИРОВАНИЕ
 
 void MainWindow::on_btnEditOrder_clicked() {
-    int id = ui->editOrderNum->text().toInt();
-    int newCount = ui->editCount->text().toInt();
+    int row = ui->tableOrders->currentRow();
 
-    for (auto& o : ordersList) {
-        if (o.getId() == id) {
-            o.setCount(newCount);
-            break;
-        }
+    if (row < 0) return;
+
+    AddOrderDialog dlg(menuList, this);
+
+    if (dlg.exec() == QDialog::Accepted) {
+        ordersList[row] = dlg.getOrder();
+        updateOrdersTable();
+        ui->memoLog->append("Заказ изменён.");
     }
-
-    updateOrdersTable();
-    ui->memoLog->append("Заказ изменён.");
 }
 
 //////////////////////////////////////////////////////////////
-// СЧЕТ
+// СЧЁТ
 
 void MainWindow::on_btnCalculateBill_clicked() {
-    int id = ui->editOrderNum->text().toInt();
+    int row = ui->tableOrders->currentRow();
+    if (row < 0) return;
+
+    int id = ordersList[row].getId();
 
     double total = calculateOrderTotal(id, ordersList, menuList);
 
@@ -163,7 +182,6 @@ void MainWindow::on_btnShowPopular_clicked() {
 void MainWindow::on_btnSortMenu_clicked() {
     sortMenuByPrice(menuList);
     updateMenuTable();
-
     ui->memoLog->append("Меню отсортировано по цене.");
 }
 

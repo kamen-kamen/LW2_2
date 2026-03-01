@@ -22,6 +22,8 @@ add_executable(LW2_2 main.cpp
         restauran/back/DataProcessing.cpp
         restauran/back/FileManager.cpp
         restauran/back/FileManager.h
+        restauran/back/addorderdialog.cpp
+        restauran/back/addorderdialog.h
 )
 target_link_libraries(LW2_2
         Qt::Core
