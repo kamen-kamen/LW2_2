@@ -26,6 +26,7 @@ private slots:
     void on_btnCalculateBill_clicked();
     void on_btnShowPopular_clicked();
     void on_btnSortMenu_clicked();
+
     void on_btnSave_clicked();
     void on_btnLoad_clicked();
 

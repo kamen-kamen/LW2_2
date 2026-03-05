@@ -147,16 +147,20 @@ void MainWindow::on_btnEditOrder_clicked() {
 // СЧЁТ
 
 void MainWindow::on_btnCalculateBill_clicked() {
+
     int row = ui->tableOrders->currentRow();
-    if (row < 0) return;
 
-    int id = ordersList[row].getId();
+    if (row < 0)
+        return;
 
-    double total = calculateOrderTotal(id, ordersList, menuList);
+    int tableNumber = ordersList[row].getTable();
+
+    double total =
+        calculateTableTotal(tableNumber, ordersList, menuList);
 
     ui->memoLog->append(
-        "\nСчёт по заказу №" +
-        QString::number(id) +
+        "\nСчёт по столику №" +
+        QString::number(tableNumber) +
         ": " +
         QString::number(total) +
         " руб."

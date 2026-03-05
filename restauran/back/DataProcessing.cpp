@@ -9,15 +9,20 @@ void sortMenuByPrice(std::vector<MenuItem>& menu) {
               });
 }
 
-double calculateOrderTotal(int orderId,
+double calculateTableTotal(int tableNumber,
                            const std::vector<Order>& orders,
-                           const std::vector<MenuItem>& menu) {
+                           const std::vector<MenuItem>& menu)
+{
     double total = 0;
 
     for (const auto& ord : orders) {
-        if (ord.getId() == orderId) {
+
+        if (ord.getTable() == tableNumber) {
+
             for (const auto& item : menu) {
+
                 if (item.getName() == ord.getDishName()) {
+
                     total += item.getPrice() * ord.getCount();
                     break;
                 }
@@ -28,15 +33,18 @@ double calculateOrderTotal(int orderId,
     return total;
 }
 
-QStringList getPopularDishes(const std::vector<Order>& orders) {
+QStringList getPopularDishes(const std::vector<Order>& orders)
+{
     QMap<QString, int> counts;
 
     for (const auto& o : orders)
         counts[o.getDishName()] += o.getCount();
 
     int maxVal = 0;
+
     for (int v : counts.values())
-        if (v > maxVal) maxVal = v;
+        if (v > maxVal)
+            maxVal = v;
 
     QStringList result;
 

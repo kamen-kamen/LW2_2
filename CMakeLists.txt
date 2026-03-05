@@ -16,6 +16,7 @@ find_package(Qt6 COMPONENTS
 
 add_executable(LW2_2 main.cpp
         restauran/front/mainwindow.cpp
+
         restauran/back/MenuItem.h
         restauran/back/Order.h
         restauran/back/DataProcessing.h
